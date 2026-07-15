@@ -831,73 +831,84 @@ twitch_live = False
 
 
 async def twitch_checker():
+    print(TWITCH_USERNAME)
+    print("Client ID :", TWITCH_CLIENT_ID[:5])
+
     print("Twitch checker lancé")
     channel = bot.get_channel(1523702876596338930)
 
     global twitch_live
 
     while True:
+        print("Nouvelle vérification")
 
         token = await get_twitch_token()
+        print("Token :", token is not None)
 
         if token is None:
             await asyncio.sleep(60)
             continue
 
         live = await check_twitch_live(token)
+        print("Live :", live)
 
 
         if live and not twitch_live:
+                
+            try:
 
-            twitch_live = True
-            
+                twitch_live = True
+                
 
-            embed=discord.Embed(
-                title=live["title"],
-                url="https://twitch.tv/daaks_s",
-                color=discord.Color.purple()
-            )
+                embed=discord.Embed(
+                    title=live["title"],
+                    url="https://twitch.tv/daaks_s",
+                    color=discord.Color.purple()
+                )
 
-            embed.set_author(name="Daaks", icon_url="https://static-cdn.jtvnw.net/jtv_user_pictures/3007305b-acb6-4974-8526-74002dc52910-profile_image-300x300.png", url="https://twitch.tv/daaks_s")
+                embed.set_author(name="Daaks", icon_url="https://static-cdn.jtvnw.net/jtv_user_pictures/3007305b-acb6-4974-8526-74002dc52910-profile_image-300x300.png", url="https://twitch.tv/daaks_s")
 
-            embed.add_field(
-                name="🎮 JEU",
-                value=live["game"],
-                inline=True
-            )
+                embed.add_field(
+                    name="🎮 JEU",
+                    value=live["game"],
+                    inline=True
+                )
 
-            embed.add_field(
-                name="👤 Viewers",
-                value=str(live["viewers"]),
-                inline=True
-            )
+                embed.add_field(
+                    name="👤 Viewers",
+                    value=str(live["viewers"]),
+                    inline=True
+                )
 
-            thumbnail = live["thumbnail"]
+                thumbnail = live["thumbnail"]
 
-            thumbnail = thumbnail.replace(
-                "{width}",
-                "1280"
-            ).replace(
-                "{height}",
-                "720"
-            )
+                thumbnail = thumbnail.replace(
+                    "{width}",
+                    "1280"
+                ).replace(
+                    "{height}",
+                    "720"
+                )
 
-            embed.set_footer(text="Twitch", icon_url="https://static.twitchcdn.net/assets/favicon-32-e29e246c157142c94346.png")
-            embed.timestamp = discord.utils.utcnow()
+                embed.set_footer(text="Twitch", icon_url="https://static.twitchcdn.net/assets/favicon-32-e29e246c157142c94346.png")
+                embed.timestamp = discord.utils.utcnow()
 
-            embed.set_image(url=thumbnail)
+                embed.set_image(url=thumbnail)
 
-            await channel.send(
-                "**🟪 EN LIVE @everyone 🟪**", embed=embed
-            )
+                await channel.send(
+                    "**🟪 EN LIVE @everyone 🟪**", embed=embed
+                )
 
 
-            streamtitle = live["title"]
-            categorie = live["game"]
-            embed2=discord.Embed(title="NOTIF STREAN TWITCH", description=f"{date}\n\nTITRE : {streamtitle}\nCATEGORIE : {categorie}\nhttps://twitch.tv/daaks_s", color=discord.Color.blurple())
-            embed2.timestamp = discord.utils.utcnow()
+                streamtitle = live["title"]
+                categorie = live["game"]
+                embed2=discord.Embed(title="NOTIF STREAN TWITCH", description=f"{date}\n\nTITRE : {streamtitle}\nCATEGORIE : {categorie}\nhttps://twitch.tv/daaks_s", color=discord.Color.blurple())
+                embed2.timestamp = discord.utils.utcnow()
 
-            await log_message_yt_twitch(embed=embed2)
+                await log_message_yt_twitch(embed=embed2)
+
+            except Exception as e:
+                print("Erreur twitch :", e)
 
         elif not live:
 
