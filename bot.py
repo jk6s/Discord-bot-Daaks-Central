@@ -806,6 +806,11 @@ async def check_twitch_live(token):
             ) as response:
 
                 user = await response.json()
+
+                print("Status users :", response.status)
+                print("User JSON :", user)
+                print("Status streams :", response.status)
+                print("Stream JSON :", stream)
                 user_id = user["data"][0]["id"]
 
             # vérifier le live
