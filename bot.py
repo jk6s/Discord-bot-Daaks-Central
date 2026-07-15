@@ -809,8 +809,6 @@ async def check_twitch_live(token):
 
                 print("Status users :", response.status)
                 print("User JSON :", user)
-                print("Status streams :", response.status)
-                print("Stream JSON :", stream)
                 user_id = user["data"][0]["id"]
 
             # vérifier le live
@@ -821,6 +819,8 @@ async def check_twitch_live(token):
             ) as response:
 
                 stream = await response.json()
+                print("Status streams :", response.status)
+                print("Stream JSON :", stream)
 
                 if stream["data"]:
                     return {
