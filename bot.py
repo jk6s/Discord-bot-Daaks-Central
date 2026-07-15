@@ -786,46 +786,52 @@ async def get_twitch_token():
             return None
         
 async def check_twitch_live(token):
+        
+    try:
 
-    headers = {
-        "Client-ID": TWITCH_CLIENT_ID,
-        "Authorization": f"Bearer {token}"
-    }
+        headers = {
+            "Client-ID": TWITCH_CLIENT_ID,
+            "Authorization": f"Bearer {token}"
+        }
 
-    username = TWITCH_USERNAME
+        username = TWITCH_USERNAME
 
-    async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession() as session:
 
-        # récupérer l'id Twitch de la chaîne
-        async with session.get(
-            "https://api.twitch.tv/helix/users",
-            headers=headers,
-            params={"login": username}
-        ) as response:
+            # récupérer l'id Twitch de la chaîne
+            async with session.get(
+                "https://api.twitch.tv/helix/users",
+                headers=headers,
+                params={"login": username}
+            ) as response:
 
-            user = await response.json()
-            user_id = user["data"][0]["id"]
+                user = await response.json()
+                user_id = user["data"][0]["id"]
 
-        # vérifier le live
-        async with session.get(
-            "https://api.twitch.tv/helix/streams",
-            headers=headers,
-            params={"user_id": user_id}
-        ) as response:
+            # vérifier le live
+            async with session.get(
+                "https://api.twitch.tv/helix/streams",
+                headers=headers,
+                params={"user_id": user_id}
+            ) as response:
 
-            stream = await response.json()
+                stream = await response.json()
 
-            if stream["data"]:
-                return {
-                    "title": stream["data"][0]["title"],
-                    "game": stream["data"][0]["game_name"],
-                    "viewers": stream["data"][0]["viewer_count"],
-                    "thumbnail": stream["data"][0]["thumbnail_url"],
-                    "username": user["data"][0]["display_name"],
-                    "profile_image": user["data"][0]["profile_image_url"]
-                }
+                if stream["data"]:
+                    return {
+                        "title": stream["data"][0]["title"],
+                        "game": stream["data"][0]["game_name"],
+                        "viewers": stream["data"][0]["viewer_count"],
+                        "thumbnail": stream["data"][0]["thumbnail_url"],
+                        "username": user["data"][0]["display_name"],
+                        "profile_image": user["data"][0]["profile_image_url"]
+                    }
 
-            return None
+                return None
+            
+    except Exception as e:
+        print("Erreur check_twitch_live :", repr(e))
+        return None
 
 twitch_live = False
 
@@ -835,7 +841,7 @@ async def twitch_checker():
     print("Client ID :", TWITCH_CLIENT_ID[:5])
 
     print("Twitch checker lancé")
-    channel = bot.get_channel(1524875316349112392)
+    channel = bot.get_channel(1523702876596338930)
 
     global twitch_live
 
