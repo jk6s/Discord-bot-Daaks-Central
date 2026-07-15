@@ -846,7 +846,7 @@ async def twitch_checker():
     print("Client ID :", TWITCH_CLIENT_ID[:5])
 
     print("Twitch checker lancé")
-    channel = bot.get_channel(1523702876596338930)
+    channel = bot.get_channel(1524875316349112392)
 
     global twitch_live
 
