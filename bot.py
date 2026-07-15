@@ -831,6 +831,7 @@ twitch_live = False
 
 
 async def twitch_checker():
+    print("Twitch checker lancé")
     channel = bot.get_channel(1523702876596338930)
 
     global twitch_live
