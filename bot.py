@@ -664,19 +664,20 @@ async def on_member_remove(member):
 
 CHANNEL_ID = "UCp3tPPcNwm0Pta4AlEnybkw"
 
-LAST_VIDEO_FILE = "last_video.json"
+async def get_last_announced_video():
+    channel = bot.get_channel(1524875316349112392)  # salon des notifs YouTube
 
-def load_last_video():
-    if os.path.exists(LAST_VIDEO_FILE):
-        with open(LAST_VIDEO_FILE, "r") as f:
-            return json.load(f).get("video_id")
+    if channel is None:
+        return None
+
+    async for message in channel.history(limit=10):
+        if message.embeds:
+            embed = message.embeds[0]
+
+            if embed.url and "youtube.com/watch?v=" in embed.url:
+                return embed.url.split("v=")[1]
+
     return None
-
-
-def save_last_video(video_id):
-    with open(LAST_VIDEO_FILE, "w") as f:
-        json.dump({"video_id": video_id}, f)
-
 
 async def get_latest_video():
     date = datetime.now(timezone.utc)
@@ -721,44 +722,45 @@ async def get_latest_video():
 
 @tasks.loop(minutes=2)
 async def check_youtube():
-    channel = bot.get_channel(1524875316349112392)
 
-    date = datetime.now(timezone.utc)
+    try:
 
-    if channel is None:
-        return
+        channel = bot.get_channel(1524875316349112392)
 
-    latest_id, title = await get_latest_video()
+        date = datetime.now(timezone.utc)
 
-    if latest_id is None:
-        return
+        if channel is None:
+            return
 
-    last_id = load_last_video()
+        latest_id, title = await get_latest_video()
 
-    if last_id is None:
-        save_last_video(latest_id)
-        return
+        if latest_id is None:
+            return
 
-    if latest_id != last_id:
-        save_last_video(latest_id)
+        last_id = await get_last_announced_video()
 
-        embed=discord.Embed(title=f"{title}", url=f"https://www.youtube.com/watch?v={latest_id}", color=discord.Color.red())
+        if latest_id != last_id:
 
-        embed.set_author(name="Daaks", icon_url="https://static-cdn.jtvnw.net/jtv_user_pictures/3007305b-acb6-4974-8526-74002dc52910-profile_image-300x300.png", url="https://www.youtube.com/@Daaks")
-        embed.set_image(url=f"https://img.youtube.com/vi/{latest_id}/maxresdefault.jpg")
-        embed.set_footer(text="YouTube", icon_url="https://www.youtube.com/yts/img/favicon_144-vfliLAfaB.png")
-        embed.timestamp = discord.utils.utcnow()
+            embed=discord.Embed(title=f"{title}", url=f"https://www.youtube.com/watch?v={latest_id}", color=discord.Color.red())
 
-        embed1=discord.Embed(title=f"NOTIF NOUVELLE VIDEO YOUTUBE", description=f"{date}\n\n{title}\nhttps://www.youtube.com/watch?v={latest_id}", color=discord.Color.red())
-        
-        embed1.set_author(name="Daaks", icon_url="https://static-cdn.jtvnw.net/jtv_user_pictures/3007305b-acb6-4974-8526-74002dc52910-profile_image-300x300.png", url="https://www.youtube.com/@Daaks")
-        embed1.timestamp = discord.utils.utcnow()
+            embed.set_author(name="Daaks", icon_url="https://static-cdn.jtvnw.net/jtv_user_pictures/3007305b-acb6-4974-8526-74002dc52910-profile_image-300x300.png", url="https://www.youtube.com/@Daaks")
+            embed.set_image(url=f"https://img.youtube.com/vi/{latest_id}/maxresdefault.jpg")
+            embed.set_footer(text="YouTube", icon_url="https://www.youtube.com/yts/img/favicon_144-vfliLAfaB.png")
+            embed.timestamp = discord.utils.utcnow()
 
-        await channel.send(
-            "🎥 **Nouvelle vidéo @everyone** 🎥\n", embed=embed)
-        
-        await log_message_yt_twitch(embed=embed1)
+            embed1=discord.Embed(title=f"NOTIF NOUVELLE VIDEO YOUTUBE", description=f"{date}\n\n{title}\nhttps://www.youtube.com/watch?v={latest_id}", color=discord.Color.red())
+            
+            embed1.set_author(name="Daaks", icon_url="https://static-cdn.jtvnw.net/jtv_user_pictures/3007305b-acb6-4974-8526-74002dc52910-profile_image-300x300.png", url="https://www.youtube.com/@Daaks")
+            embed1.timestamp = discord.utils.utcnow()
 
+            await channel.send(
+                "🎥 **Nouvelle vidéo @everyone** 🎥\n", embed=embed)
+            
+            await log_message_yt_twitch(embed=embed1)
+
+    except Exception as e:
+        print("Erreur YouTube :", e)
+    
 
     #TWITCH
 
@@ -846,84 +848,90 @@ async def twitch_checker():
     print("Client ID :", TWITCH_CLIENT_ID[:5])
 
     print("Twitch checker lancé")
-    channel = bot.get_channel(1524875316349112392)
+    channel = bot.get_channel(1523702876596338930)
 
     global twitch_live
 
     while True:
-        print("Nouvelle vérification")
+            
+        try:
 
-        token = await get_twitch_token()
-        print("Token :", token is not None)
+            print("Nouvelle vérification")
 
-        if token is None:
-            await asyncio.sleep(60)
-            continue
+            token = await get_twitch_token()
+            print("Token :", token is not None)
 
-        live = await check_twitch_live(token)
-        print("Live :", live)
+            if token is None:
+                await asyncio.sleep(60)
+                continue
 
-
-        if live and not twitch_live:
-                
-            try:
-
-                twitch_live = True
-                
-
-                embed=discord.Embed(
-                    title=live["title"],
-                    url="https://twitch.tv/daaks_s",
-                    color=discord.Color.purple()
-                )
-
-                embed.set_author(name="Daaks", icon_url="https://static-cdn.jtvnw.net/jtv_user_pictures/3007305b-acb6-4974-8526-74002dc52910-profile_image-300x300.png", url="https://twitch.tv/daaks_s")
-
-                embed.add_field(
-                    name="🎮 JEU",
-                    value=live["game"],
-                    inline=True
-                )
-
-                embed.add_field(
-                    name="👤 Viewers",
-                    value=str(live["viewers"]),
-                    inline=True
-                )
-
-                thumbnail = live["thumbnail"]
-
-                thumbnail = thumbnail.replace(
-                    "{width}",
-                    "1280"
-                ).replace(
-                    "{height}",
-                    "720"
-                )
-
-                embed.set_footer(text="Twitch", icon_url="https://static.twitchcdn.net/assets/favicon-32-e29e246c157142c94346.png")
-                embed.timestamp = discord.utils.utcnow()
-
-                embed.set_image(url=thumbnail)
-
-                await channel.send(
-                    "**🟪 EN LIVE @everyone 🟪**", embed=embed
-                )
+            live = await check_twitch_live(token)
+            print("Live :", live)
 
 
-                streamtitle = live["title"]
-                categorie = live["game"]
-                embed2=discord.Embed(title="NOTIF STREAN TWITCH", description=f"{date}\n\nTITRE : {streamtitle}\nCATEGORIE : {categorie}\nhttps://twitch.tv/daaks_s", color=discord.Color.blurple())
-                embed2.timestamp = discord.utils.utcnow()
+            if live and not twitch_live:
+                    
+                try:
 
-                await log_message_yt_twitch(embed=embed2)
+                    twitch_live = True
+                    
 
-            except Exception as e:
-                print("Erreur twitch :", e)
+                    embed=discord.Embed(
+                        title=live["title"],
+                        url="https://twitch.tv/daaks_s",
+                        color=discord.Color.purple()
+                    )
 
-        elif not live:
+                    embed.set_author(name="Daaks", icon_url="https://static-cdn.jtvnw.net/jtv_user_pictures/3007305b-acb6-4974-8526-74002dc52910-profile_image-300x300.png", url="https://twitch.tv/daaks_s")
 
-            twitch_live = False
+                    embed.add_field(
+                        name="🎮 JEU",
+                        value=live["game"],
+                        inline=True
+                    )
+
+                    embed.add_field(
+                        name="👤 Viewers",
+                        value=str(live["viewers"]),
+                        inline=True
+                    )
+
+                    thumbnail = live["thumbnail"]
+
+                    thumbnail = thumbnail.replace(
+                        "{width}",
+                        "1280"
+                    ).replace(
+                        "{height}",
+                        "720"
+                    )
+
+                    embed.set_footer(text="Twitch", icon_url="https://static.twitchcdn.net/assets/favicon-32-e29e246c157142c94346.png")
+                    embed.timestamp = discord.utils.utcnow()
+
+                    embed.set_image(url=thumbnail)
+
+                    await channel.send(
+                        "**🟪 EN LIVE @everyone 🟪**", embed=embed
+                    )
+
+
+                    streamtitle = live["title"]
+                    categorie = live["game"]
+                    embed2=discord.Embed(title="NOTIF STREAN TWITCH", description=f"{date}\n\nTITRE : {streamtitle}\nCATEGORIE : {categorie}\nhttps://twitch.tv/daaks_s", color=discord.Color.blurple())
+                    embed2.timestamp = discord.utils.utcnow()
+
+                    await log_message_yt_twitch(embed=embed2)
+
+                except Exception as e:
+                    print("Erreur twitch :", e)
+
+            elif not live:
+
+                twitch_live = False
+
+        except Exception as e:
+            print("Erreur Twitch :", e)
 
 
         await asyncio.sleep(60)
